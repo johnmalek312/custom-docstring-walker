@@ -49,68 +49,68 @@ class DocstringWalker(BaseReader):
         """
         return self.process_directory(code_dir, skip_initpy, fail_on_malformed_files)
 
-def process_directory(
-    self,
-    code_dir: str,
-    skip_initpy: bool = True,
-    fail_on_malformed_files: bool = False,
-) -> List[Document]:
-    """
-    Process a directory and extract information from Python files.
-    Parameters
-    ----------
-    code_dir : str
-        The directory path to the code files.
-    skip_initpy : bool
-        Whether to skip the __init__.py files. Defaults to True.
-    fail_on_malformed_files : bool
-        Whether to fail on malformed files. Defaults to False - in this case,
-        the malformed files are skipped and a warning is logged.
-
-    Returns:
-    -------
-    List[Document]
-        A list of Document objects.
-    """
-    llama_docs = []
-    for root, _, files in os.walk(code_dir):
-        for file in files:
-            if file.endswith(".py"):
-                if skip_initpy and file == "__init__.py":
-                    continue
-                module_name = file.replace(".py", "")
-                module_path = os.path.join(root, file)
-                try:
-                    doc = self.parse_module(module_name, module_path)
-                    if doc:  # Only add if not None
-                        llama_docs.append(doc)
-                except Exception as e:
-                    if fail_on_malformed_files:
-                        raise e  # noqa: TRY201
-                    log.warning(
-                        "Failed to parse file %s. Skipping. Error: %s",
-                        module_path,
-                        e,
-                    )
-    return llama_docs
-
-
-    def read_module_text(self, path: str) -> str:
-        """Read the text of a Python module. For tests this function can be mocked.
-
+    def process_directory(
+        self,
+        code_dir: str,
+        skip_initpy: bool = True,
+        fail_on_malformed_files: bool = False,
+    ) -> List[Document]:
+        """
+        Process a directory and extract information from Python files.
         Parameters
         ----------
-        path : str
-            Path to the module.
-
+        code_dir : str
+            The directory path to the code files.
+        skip_initpy : bool
+            Whether to skip the __init__.py files. Defaults to True.
+        fail_on_malformed_files : bool
+            Whether to fail on malformed files. Defaults to False - in this case,
+            the malformed files are skipped and a warning is logged.
+    
         Returns:
         -------
-        str
-            The text of the module.
+        List[Document]
+            A list of Document objects.
         """
-        with open(path, encoding="utf-8") as f:
-            return f.read()
-
+        llama_docs = []
+        for root, _, files in os.walk(code_dir):
+            for file in files:
+                if file.endswith(".py"):
+                    if skip_initpy and file == "__init__.py":
+                        continue
+                    module_name = file.replace(".py", "")
+                    module_path = os.path.join(root, file)
+                    try:
+                        doc = self.parse_module(module_name, module_path)
+                        if doc:  # Only add if not None
+                            llama_docs.append(doc)
+                    except Exception as e:
+                        if fail_on_malformed_files:
+                            raise e  # noqa: TRY201
+                        log.warning(
+                            "Failed to parse file %s. Skipping. Error: %s",
+                            module_path,
+                            e,
+                        )
+        return llama_docs
+    
+    
+        def read_module_text(self, path: str) -> str:
+            """Read the text of a Python module. For tests this function can be mocked.
+    
+            Parameters
+            ----------
+            path : str
+                Path to the module.
+    
+            Returns:
+            -------
+            str
+                The text of the module.
+            """
+            with open(path, encoding="utf-8") as f:
+                return f.read()
+    
     def parse_module(self, module_name: str, path: str) -> Document:
         """Function for parsing a single Python module.
 
