@@ -95,21 +95,21 @@ class DocstringWalker(BaseReader):
         return llama_docs
     
     
-        def read_module_text(self, path: str) -> str:
-            """Read the text of a Python module. For tests this function can be mocked.
-    
-            Parameters
-            ----------
-            path : str
-                Path to the module.
-    
-            Returns:
-            -------
-            str
-                The text of the module.
-            """
-            with open(path, encoding="utf-8") as f:
-                return f.read()
+    def read_module_text(self, path: str) -> str:
+        """Read the text of a Python module. For tests this function can be mocked.
+
+        Parameters
+        ----------
+        path : str
+            Path to the module.
+
+        Returns:
+        -------
+        str
+            The text of the module.
+        """
+        with open(path, encoding="utf-8") as f:
+            return f.read()
     
     def parse_module(self, module_name: str, path: str) -> Document:
         """Function for parsing a single Python module.
