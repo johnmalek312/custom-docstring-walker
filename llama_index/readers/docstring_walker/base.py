@@ -49,50 +49,51 @@ class DocstringWalker(BaseReader):
         """
         return self.process_directory(code_dir, skip_initpy, fail_on_malformed_files)
 
-    def process_directory(
-        self,
-        code_dir: str,
-        skip_initpy: bool = True,
-        fail_on_malformed_files: bool = False,
-    ) -> List[Document]:
-        """
-        Process a directory and extract information from Python files.
-        Parameters
-        ----------
-        code_dir : str
-            The directory path to the code files.
-        skip_initpy : bool
-            Whether to skip the __init__.py files. Defaults to True.
-        fail_on_malformed_files : bool
-            Whether to fail on malformed files. Defaults to False - in this case,
-            the malformed files are skipped and a warning is logged.
+def process_directory(
+    self,
+    code_dir: str,
+    skip_initpy: bool = True,
+    fail_on_malformed_files: bool = False,
+) -> List[Document]:
+    """
+    Process a directory and extract information from Python files.
+    Parameters
+    ----------
+    code_dir : str
+        The directory path to the code files.
+    skip_initpy : bool
+        Whether to skip the __init__.py files. Defaults to True.
+    fail_on_malformed_files : bool
+        Whether to fail on malformed files. Defaults to False - in this case,
+        the malformed files are skipped and a warning is logged.
 
-        Returns:
-        -------
-        List[Document]
-            A list of Document objects.
-        """
-        llama_docs = []
-        for root, _, files in os.walk(code_dir):
-            for file in files:
-                if file.endswith(".py"):
-                    if skip_initpy and file == "__init__.py":
-                        continue
-                    module_name = file.replace(".py", "")
-                    module_path = os.path.join(root, file)
-                    try:
-                        doc = self.parse_module(module_name, module_path)
+    Returns:
+    -------
+    List[Document]
+        A list of Document objects.
+    """
+    llama_docs = []
+    for root, _, files in os.walk(code_dir):
+        for file in files:
+            if file.endswith(".py"):
+                if skip_initpy and file == "__init__.py":
+                    continue
+                module_name = file.replace(".py", "")
+                module_path = os.path.join(root, file)
+                try:
+                    doc = self.parse_module(module_name, module_path)
+                    if doc:  # Only add if not None
                         llama_docs.append(doc)
-                    except Exception as e:
-                        if fail_on_malformed_files:
-                            raise e  # noqa: TRY201
-                        log.warning(
-                            "Failed to parse file %s. Skipping. Error: %s",
-                            module_path,
-                            e,
-                        )
-                        continue
-        return llama_docs
+                except Exception as e:
+                    if fail_on_malformed_files:
+                        raise e  # noqa: TRY201
+                    log.warning(
+                        "Failed to parse file %s. Skipping. Error: %s",
+                        module_path,
+                        e,
+                    )
+    return llama_docs
+
 
     def read_module_text(self, path: str) -> str:
         """Read the text of a Python module. For tests this function can be mocked.
@@ -127,6 +128,13 @@ class DocstringWalker(BaseReader):
         """
         module_text = self.read_module_text(path)
         module = ast.parse(module_text)
+        has_register_tool_function = any(
+            isinstance(elem, ast.FunctionDef) and self.has_decorator_factory(elem, "register_tool")
+            for elem in module.body
+        )
+        
+        if not has_register_tool_function:
+            return None  # Skip this module
         module_docstring = ast.get_docstring(module)
         module_text = f"Module: {module_name} \n"
         if module_docstring:
