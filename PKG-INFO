@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: llama-index-readers-docstring-walker
-Version: 0.3.0
+Version: 0.3.1
 Summary: llama-index readers docstring_walker integration
 License: MIT
 Keywords: code,docstring,python,source code
