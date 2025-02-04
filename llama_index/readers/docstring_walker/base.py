@@ -141,10 +141,9 @@ class DocstringWalker(BaseReader):
             module_text += f"Docstring: {module_docstring} \n"
         sub_texts = []
         for elem in module.body:
-            if isinstance(elem, ast.FunctionDef):  # Only process functions
-                if self.has_decorator_factory(elem, "register_tool"):  # Check for decorator
-                    sub_text = self.process_function(elem, module_name)
-                    sub_texts.append(sub_text)
+            if type(elem) in TYPES_TO_PROCESS:
+                sub_text = self.process_elem(elem, module_name)
+                sub_texts.append(sub_text)
         module_text += "\n".join(sub_texts)
         file_name = os.path.basename(path)
         return Document(text=module_text, metadata={"file_name": file_name})
@@ -168,15 +167,12 @@ class DocstringWalker(BaseReader):
             A string representation of the processed class node and its sub-elements.
             It provides a textual representation of the processed class node and its sub-elements.
         """
-        cls_name = class_node.name
-        cls_docstring = ast.get_docstring(class_node)
-
-        text = f"\n Class name: {cls_name}, In: {parent_node} \n Docstring: {cls_docstring}"
-        sub_texts = []
+        sub_texts = []  
         for elem in class_node.body:
-            sub_text = self.process_elem(elem, cls_name)
-            sub_texts.append(sub_text)
-        return text + "\n".join(sub_texts)
+            result = self.process_elem(elem, class_node.name)
+            if result:
+                sub_texts.append(result)
+        return "\n".join(sub_texts)
 
     def process_function(self, func_node: ast.FunctionDef, parent_node: str) -> str:
         """
@@ -194,11 +190,11 @@ class DocstringWalker(BaseReader):
         str
             A string representation of the processed function node with its sub-elements.
         """
-        func_name = func_node.name
-        func_docstring = ast.get_docstring(func_node)
-
-        text = f"\nFunction: {func_name}\n{func_docstring}"
-        return text  # Only return the function docstring, no sub-elements
+        if self.has_decorator_factory(func_node, "register_tool"):  # Check for decorator
+            func_name = func_node.name
+            func_docstring = ast.get_docstring(func_node) or ""
+            text = f"\nFunction: {func_name}\n{func_docstring}"
+            return text  # Only return the function docstring, no sub-elements
 
     def process_elem(self, elem, parent_node: str) -> str:
         """
