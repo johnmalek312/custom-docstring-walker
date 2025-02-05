@@ -128,10 +128,7 @@ class DocstringWalker(BaseReader):
         """
         module_text = self.read_module_text(path)
         module = ast.parse(module_text)
-        has_register_tool_function = any(
-            isinstance(elem, ast.FunctionDef) and self.has_decorator_factory(elem, "register_tool")
-            for elem in module.body
-        )
+        has_register_tool_function = self.module_has_decorator_factory(module, "register_tool")
         
         if not has_register_tool_function:
             return None  # Skip this module
@@ -143,7 +140,8 @@ class DocstringWalker(BaseReader):
         for elem in module.body:
             if type(elem) in TYPES_TO_PROCESS:
                 sub_text = self.process_elem(elem, module_name)
-                sub_texts.append(sub_text)
+                if sub_text:
+                    sub_texts.append(sub_text)
         module_text += "\n".join(sub_texts)
         file_name = os.path.basename(path)
         return Document(text=module_text, metadata={"file_name": file_name})
@@ -223,4 +221,13 @@ class DocstringWalker(BaseReader):
             if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Name):
                 if decorator.func.id == decorator_factory:
                     return True
+        return False
+
+    def module_has_decorator_factory(self, module: ast.Module | ast.ClassDef, decorator_factory: str) -> bool:
+        """Check if a module or class has a function that has the @register_tool() decorator."""
+        for element in module.body:
+            if isinstance(element, ast.ClassDef) and self.module_has_decorator_factory(element, decorator_factory):
+                return True
+            elif isinstance(element, ast.FunctionDef) and self.has_decorator_factory(element, decorator_factory):
+                return True
         return False
